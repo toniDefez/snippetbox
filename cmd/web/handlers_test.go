@@ -23,6 +23,7 @@ func (m *mockSnippetModel) Insert(title, content string, expires int) (int, erro
 
 func TestPing(t *testing.T) {
 	rr := httptest.NewRecorder()
+
 	r := httptest.NewRequest("GET", "/ping", nil)
 
 	// app := newTestApplication() // Lo vamos a definir luego si hace falta
