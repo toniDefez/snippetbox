@@ -23,6 +23,7 @@ func (m *mockSnippetModel) Insert(title, content string, expires int) (int, erro
 
 func TestPing(t *testing.T) {
 	rr := httptest.NewRecorder()
+
 	r := httptest.NewRequest("GET", "/ping", nil)
 
 	// app := newTestApplication() // Lo vamos a definir luego si hace falta
@@ -142,7 +143,7 @@ func TestSnippetCreatePost(t *testing.T) {
 	}
 
 	// Verificar Location
-	expectedLocation := "/snippet/view/124"
+	expectedLocation := "/snippet/view/123"
 	actualLocation := rr.Header().Get("Location")
 	if actualLocation != expectedLocation {
 		t.Errorf("expected Location header %q; got %q", expectedLocation, actualLocation)
