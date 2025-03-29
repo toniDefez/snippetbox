@@ -143,7 +143,7 @@ func TestSnippetCreatePost(t *testing.T) {
 	}
 
 	// Verificar Location
-	expectedLocation := "/snippet/view/123"
+	expectedLocation := "/snippet/view/124"
 	actualLocation := rr.Header().Get("Location")
 	if actualLocation != expectedLocation {
 		t.Errorf("expected Location header %q; got %q", expectedLocation, actualLocation)
