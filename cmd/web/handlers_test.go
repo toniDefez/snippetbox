@@ -1,0 +1,150 @@
+package main
+
+import (
+	"io"
+	"log/slog"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"snippetbox.tonidefez.net/internal/models"
+)
+
+func pingHandler(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("OK"))
+}
+
+type mockSnippetModel struct{}
+
+func (m *mockSnippetModel) Insert(title, content string, expires int) (int, error) {
+	return 123, nil
+}
+
+func TestPing(t *testing.T) {
+	rr := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/ping", nil)
+
+	// app := newTestApplication() // Lo vamos a definir luego si hace falta
+	handler := http.HandlerFunc(pingHandler)
+
+	handler.ServeHTTP(rr, r)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected status 200; got %d", rr.Code)
+	}
+
+	if rr.Body.String() != "OK" {
+		t.Errorf("expected body 'OK'; got %q", rr.Body.String())
+	}
+}
+
+func TestHome(t *testing.T) {
+	rr := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/", nil)
+
+	// simulate dependencies
+	dummyLogger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	dummyDB := &models.SnippetModel{DB: nil}
+
+	app := &Application{
+		logger:   dummyLogger,
+		snippets: dummyDB,
+	}
+
+	handler := http.HandlerFunc(app.Home)
+
+	handler.ServeHTTP(rr, req)
+
+	// verify status
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected status 200; got %d", rr.Code)
+	}
+
+	// verify header
+	got := rr.Header().Get("Server")
+	if got != "Go" {
+		t.Errorf("expected header 'Server: Go'; got %q", got)
+	}
+
+	// verify content HTML (optional)
+	if !strings.Contains(rr.Body.String(), "<title>Home - Snippetbox</title>") {
+		t.Errorf("expected HTML title; got %q", rr.Body.String())
+	}
+}
+
+func TestSnippetView(t *testing.T) {
+	rr := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/snippet/view/1", nil)
+
+	// simulate dependencies
+	dummyLogger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	dummyDB := &models.SnippetModel{DB: nil}
+
+	app := &Application{
+		logger:   dummyLogger,
+		snippets: dummyDB,
+	}
+
+	router := app.routes()
+	router.ServeHTTP(rr, req)
+
+	// verify status
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected status 200; got %d", rr.Code)
+	}
+
+}
+
+func TestSnippetCreateGet(t *testing.T) {
+	rr := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/snippet/create", nil)
+
+	// simulate dependencies
+	dummyLogger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	dummyDB := &models.SnippetModel{DB: nil}
+
+	app := &Application{
+		logger:   dummyLogger,
+		snippets: dummyDB,
+	}
+
+	router := app.routes()
+	router.ServeHTTP(rr, req)
+
+	// verify status
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected status 200; got %d", rr.Code)
+	}
+}
+
+func TestSnippetCreatePost(t *testing.T) {
+	rr := httptest.NewRecorder()
+
+	form := "title=Mi+Título&content=Texto+del+snippet&expires=7"
+	req := httptest.NewRequest("POST", "/snippet/create", strings.NewReader(form))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	dummyLogger := slog.New(slog.NewTextHandler(io.Discard, nil))
+
+	// simulate dependencies
+	app := &Application{
+		logger:   dummyLogger,
+		snippets: &mockSnippetModel{},
+	}
+
+	router := app.routes()
+	router.ServeHTTP(rr, req)
+
+	// Verificar redirección
+	if rr.Code != http.StatusSeeOther {
+		t.Errorf("expected status 303 See Other; got %d", rr.Code)
+	}
+
+	// Verificar Location
+	expectedLocation := "/snippet/view/123"
+	actualLocation := rr.Header().Get("Location")
+	if actualLocation != expectedLocation {
+		t.Errorf("expected Location header %q; got %q", expectedLocation, actualLocation)
+	}
+}

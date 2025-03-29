@@ -15,8 +15,9 @@ import (
 // web application. For now we'll only include the structured logger, but we'll
 // add more to this as the build progresses.
 type Application struct {
-	logger   *slog.Logger
-	snippets *models.SnippetModel
+	logger *slog.Logger
+	// implemeting an interfaz we can make with differents dependencies DIP
+	snippets models.SnippetModeler
 }
 
 func main() {

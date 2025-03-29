@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"path/filepath"
+	"runtime"
 	"strconv"
 	"text/template"
 )
@@ -10,12 +12,14 @@ import (
 func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Server", "Go")
 
-	files := []string{
-		"./ui/html/base.tmpl",
-		"./ui/html/partials/nav.tmpl",
-		"./ui/html/pages/home.tmpl",
-	}
+	_, filename, _, _ := runtime.Caller(0)
+	basePath := filepath.Join(filepath.Dir(filename), "..", "..", "ui", "html")
 
+	files := []string{
+		filepath.Join(basePath, "base.tmpl"),
+		filepath.Join(basePath, "partials", "nav.tmpl"),
+		filepath.Join(basePath, "pages", "home.tmpl"),
+	}
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
 		app.serverError(w, r, err)
