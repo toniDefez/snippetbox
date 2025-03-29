@@ -18,7 +18,7 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 type mockSnippetModel struct{}
 
 func (m *mockSnippetModel) Insert(title, content string, expires int) (int, error) {
-	return 123, nil
+	return 124, nil
 }
 
 func TestPing(t *testing.T) {
@@ -142,7 +142,7 @@ func TestSnippetCreatePost(t *testing.T) {
 	}
 
 	// Verificar Location
-	expectedLocation := "/snippet/view/123"
+	expectedLocation := "/snippet/view/124"
 	actualLocation := rr.Header().Get("Location")
 	if actualLocation != expectedLocation {
 		t.Errorf("expected Location header %q; got %q", expectedLocation, actualLocation)
