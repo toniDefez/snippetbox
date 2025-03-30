@@ -15,12 +15,6 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK"))
 }
 
-type mockSnippetModel struct{}
-
-func (m *mockSnippetModel) Insert(title, content string, expires int) (int, error) {
-	return 124, nil
-}
-
 func TestPing(t *testing.T) {
 	rr := httptest.NewRecorder()
 
@@ -80,11 +74,10 @@ func TestSnippetView(t *testing.T) {
 
 	// simulate dependencies
 	dummyLogger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	dummyDB := &models.SnippetModel{DB: nil}
 
 	app := &Application{
 		logger:   dummyLogger,
-		snippets: dummyDB,
+		snippets: &models.MockSnippetModel{},
 	}
 
 	router := app.routes()
@@ -93,6 +86,12 @@ func TestSnippetView(t *testing.T) {
 	// verify status
 	if rr.Code != http.StatusOK {
 		t.Errorf("expected status 200; got %d", rr.Code)
+	}
+
+	body := rr.Body.String()
+
+	if !strings.Contains(body, "Mock Title") {
+		t.Errorf("expected body to contain 'Mock Title'; got %q", body)
 	}
 
 }
@@ -131,7 +130,7 @@ func TestSnippetCreatePost(t *testing.T) {
 	// simulate dependencies
 	app := &Application{
 		logger:   dummyLogger,
-		snippets: &mockSnippetModel{},
+		snippets: &models.MockSnippetModel{},
 	}
 
 	router := app.routes()
