@@ -12,3 +12,20 @@ func (m *MockSnippetModel) Get(id int) (Snippet, error) {
 		Title: "Mock Title",
 	}, nil
 }
+
+func (m *MockSnippetModel) Latest() ([]Snippet, error) {
+
+	return []Snippet{
+		{
+			ID:      1,
+			Title:   "Mock Title 1",
+			Content: "Mock Content 1",
+		},
+		{
+			ID:      2,
+			Title:   "Mock Title 2",
+			Content: "Mock Content 2",
+		},
+	}, nil
+
+}
