@@ -79,10 +79,15 @@ func TestSnippetView(t *testing.T) {
 
 	// simulate dependencies
 	dummyLogger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	templateCache, err := newTemplateCache()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	app := &Application{
-		logger:   dummyLogger,
-		snippets: &models.MockSnippetModel{},
+		logger:        dummyLogger,
+		snippets:      &models.MockSnippetModel{},
+		templateCache: templateCache,
 	}
 
 	router := app.routes()
