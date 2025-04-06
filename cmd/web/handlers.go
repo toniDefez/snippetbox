@@ -4,10 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"path/filepath"
-	"runtime"
 	"strconv"
-	"text/template"
 
 	"snippetbox.tonidefez.net/internal/models"
 )
@@ -15,24 +12,15 @@ import (
 func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Server", "Go")
 
-	_, filename, _, _ := runtime.Caller(0)
-	basePath := filepath.Join(filepath.Dir(filename), "..", "..", "ui", "html")
-
-	files := []string{
-		filepath.Join(basePath, "base.tmpl"),
-		filepath.Join(basePath, "partials", "nav.tmpl"),
-		filepath.Join(basePath, "pages", "home.tmpl"),
-	}
-	ts, err := template.ParseFiles(files...)
+	snippets, err := app.snippets.Latest()
 	if err != nil {
 		app.serverError(w, r, err)
 		return
 	}
 
-	err = ts.ExecuteTemplate(w, "base", nil)
-	if err != nil {
-		app.serverError(w, r, err)
-	}
+	app.render(w, r, http.StatusOK, "home.tmpl", templateData{
+		Snippets: snippets,
+	})
 }
 
 func (app *Application) SnippetView(w http.ResponseWriter, r *http.Request) {
@@ -55,8 +43,9 @@ func (app *Application) SnippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Write the snippet data as a plain-text HTTP response body.
-	fmt.Fprintf(w, "%+v", snippet)
+	app.render(w, r, http.StatusOK, "view.tmpl", templateData{
+		Snippet: snippet,
+	})
 
 }
 

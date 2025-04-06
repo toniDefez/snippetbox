@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"fmt"
 	"net/http"
 	"runtime/debug"
 )
@@ -28,4 +30,22 @@ func (app *Application) serverError(w http.ResponseWriter, r *http.Request, err 
 // Request" when there's a problem with the request that the user sent.
 func (app *Application) clientError(w http.ResponseWriter, status int) {
 	http.Error(w, http.StatusText(status), status)
+}
+
+func (app *Application) render(w http.ResponseWriter, r *http.Request, status int, page string, data templateData) {
+	ts, ok := app.templateCache[page]
+	if !ok {
+		app.serverError(w, r, fmt.Errorf("template %s does not exist", page))
+		return
+	}
+
+	buf := new(bytes.Buffer)
+	err := ts.ExecuteTemplate(buf, "base", data)
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
+	w.WriteHeader(status)
+	buf.WriteTo(w)
 }

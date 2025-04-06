@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"text/template"
 
 	_ "github.com/go-sql-driver/mysql"
 	"snippetbox.tonidefez.net/internal/models"
@@ -17,7 +18,8 @@ import (
 type Application struct {
 	logger *slog.Logger
 	// implemeting an interfaz we can make with differents dependencies DIP
-	snippets models.SnippetModeler
+	snippets      models.SnippetModeler
+	templateCache map[string]*template.Template
 }
 
 func main() {
@@ -41,9 +43,17 @@ func main() {
 	// before the main() function exits.
 	defer db.Close()
 
+	// Initialize a new template cache...
+	templateCache, err := newTemplateCache()
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+
 	app := &Application{
-		logger:   logger,
-		snippets: &models.SnippetModel{DB: db},
+		logger:        logger,
+		snippets:      &models.SnippetModel{DB: db},
+		templateCache: templateCache,
 	}
 
 	logger.Info("starting server", "addr", *addr)
