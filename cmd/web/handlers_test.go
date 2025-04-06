@@ -40,11 +40,10 @@ func TestHome(t *testing.T) {
 
 	// simulate dependencies
 	dummyLogger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	dummyDB := &models.SnippetModel{DB: nil}
 
 	app := &Application{
 		logger:   dummyLogger,
-		snippets: dummyDB,
+		snippets: &models.MockSnippetModel{},
 	}
 
 	handler := http.HandlerFunc(app.Home)
