@@ -4,10 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"path/filepath"
-	"runtime"
 	"strconv"
-	"text/template"
 
 	"snippetbox.tonidefez.net/internal/models"
 )
@@ -21,31 +18,9 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, filename, _, _ := runtime.Caller(0)
-	basePath := filepath.Join(filepath.Dir(filename), "..", "..", "ui", "html")
-
-	files := []string{
-		filepath.Join(basePath, "base.tmpl"),
-		filepath.Join(basePath, "partials", "nav.tmpl"),
-		filepath.Join(basePath, "pages", "home.tmpl"),
-	}
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, r, err)
-		return
-	}
-
-	// Create an instance of a templateData struct holding the slice of
-	// snippets.
-	data := templateData{
+	app.render(w, r, http.StatusOK, "home.tmpl", templateData{
 		Snippets: snippets,
-	}
-
-	// Pass in the templateData struct when executing the template.
-	err = ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.serverError(w, r, err)
-	}
+	})
 }
 
 func (app *Application) SnippetView(w http.ResponseWriter, r *http.Request) {
@@ -68,36 +43,9 @@ func (app *Application) SnippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Initialize a slice containing the paths to the view.tmpl file,
-	// plus the base layout and navigation partial that we made earlier.
-
-	_, filename, _, _ := runtime.Caller(0)
-	basePath := filepath.Join(filepath.Dir(filename), "..", "..", "ui", "html")
-
-	files := []string{
-		filepath.Join(basePath, "base.tmpl"),
-		filepath.Join(basePath, "partials", "nav.tmpl"),
-		filepath.Join(basePath, "pages", "view.tmpl"),
-	}
-
-	// Parse the template files...
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, r, err)
-		return
-	}
-
-	// Create an instance of a templateData struct holding the snippet data.
-	data := templateData{
+	app.render(w, r, http.StatusOK, "view.tmpl", templateData{
 		Snippet: snippet,
-	}
-
-	// And then execute them. Notice how we are passing in the snippet
-	// data (a models.Snippet struct) as the final parameter?
-	err = ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.serverError(w, r, err)
-	}
+	})
 
 }
 
