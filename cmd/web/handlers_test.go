@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -162,5 +163,28 @@ func TestSnippetCreatePost(t *testing.T) {
 	actualLocation := rr.Header().Get("Location")
 	if actualLocation != expectedLocation {
 		t.Errorf("expected Location header %q; got %q", expectedLocation, actualLocation)
+	}
+}
+
+func TestSnippetCreatePost_InvalidData(t *testing.T) {
+	app := &Application{} // no necesitas DB para este test
+
+	form := url.Values{}
+	form.Add("title", "")
+	form.Add("content", "Some valid content")
+	form.Add("expires", "7")
+
+	req := httptest.NewRequest(http.MethodPost, "/snippet/create", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	rr := httptest.NewRecorder()
+
+	app.SnippetCreatePost(rr, req)
+
+	res := rr.Result()
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		t.Errorf("expected status 200 OK; got %d", res.StatusCode)
 	}
 }
