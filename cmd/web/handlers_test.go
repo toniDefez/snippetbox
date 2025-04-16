@@ -167,7 +167,14 @@ func TestSnippetCreatePost(t *testing.T) {
 }
 
 func TestSnippetCreatePost_InvalidData(t *testing.T) {
-	app := &Application{} // no necesitas DB para este test
+	templateCache, err := newTemplateCache()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	app := &Application{
+		templateCache: templateCache,
+	}
 
 	form := url.Values{}
 	form.Add("title", "")
@@ -184,7 +191,7 @@ func TestSnippetCreatePost_InvalidData(t *testing.T) {
 	res := rr.Result()
 	defer res.Body.Close()
 
-	if res.StatusCode != http.StatusOK {
-		t.Errorf("expected status 200 OK; got %d", res.StatusCode)
+	if res.StatusCode != http.StatusUnprocessableEntity {
+		t.Errorf("expected status 422 OK; got %d", res.StatusCode)
 	}
 }
