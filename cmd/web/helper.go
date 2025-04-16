@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"runtime/debug"
+
+	"snippetbox.tonidefez.net/internal/models"
 )
 
 // The serverError helper writes a log entry at Error level (including the request
@@ -48,4 +50,11 @@ func (app *Application) render(w http.ResponseWriter, r *http.Request, status in
 
 	w.WriteHeader(status)
 	buf.WriteTo(w)
+}
+
+func (app *Application) NewTemplateData(r *http.Request) *templateData {
+	return &templateData{
+		Snippet:  models.Snippet{},
+		Snippets: []models.Snippet{},
+	}
 }

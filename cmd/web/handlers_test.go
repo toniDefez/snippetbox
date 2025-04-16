@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -113,10 +114,16 @@ func TestSnippetCreateGet(t *testing.T) {
 	// simulate dependencies
 	dummyLogger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	dummyDB := &models.SnippetModel{DB: nil}
+	templateCache, err := newTemplateCache()
+
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	app := &Application{
-		logger:   dummyLogger,
-		snippets: dummyDB,
+		logger:        dummyLogger,
+		snippets:      dummyDB,
+		templateCache: templateCache,
 	}
 
 	router := app.routes()
@@ -156,5 +163,35 @@ func TestSnippetCreatePost(t *testing.T) {
 	actualLocation := rr.Header().Get("Location")
 	if actualLocation != expectedLocation {
 		t.Errorf("expected Location header %q; got %q", expectedLocation, actualLocation)
+	}
+}
+
+func TestSnippetCreatePost_InvalidData(t *testing.T) {
+	templateCache, err := newTemplateCache()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	app := &Application{
+		templateCache: templateCache,
+	}
+
+	form := url.Values{}
+	form.Add("title", "")
+	form.Add("content", "Some valid content")
+	form.Add("expires", "7")
+
+	req := httptest.NewRequest(http.MethodPost, "/snippet/create", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	rr := httptest.NewRecorder()
+
+	app.SnippetCreatePost(rr, req)
+
+	res := rr.Result()
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusUnprocessableEntity {
+		t.Errorf("expected status 422 OK; got %d", res.StatusCode)
 	}
 }
