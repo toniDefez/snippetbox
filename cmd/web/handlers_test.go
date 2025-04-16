@@ -113,10 +113,16 @@ func TestSnippetCreateGet(t *testing.T) {
 	// simulate dependencies
 	dummyLogger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	dummyDB := &models.SnippetModel{DB: nil}
+	templateCache, err := newTemplateCache()
+
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	app := &Application{
-		logger:   dummyLogger,
-		snippets: dummyDB,
+		logger:        dummyLogger,
+		snippets:      dummyDB,
+		templateCache: templateCache,
 	}
 
 	router := app.routes()
