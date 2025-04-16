@@ -79,7 +79,7 @@ You should receive a redirect to `/snippet/view/{id}` if everything is working.
 ## ✅ To Do
 
 - [ ] Add form-based snippet creation
-- [ ] Render snippets with HTML templates
+- [x] Render snippets with HTML templates
 - [ ] Add validation
 - [ ] Add sessions and authentication
 
