@@ -34,3 +34,8 @@ INSERT INTO snippets (title, content, created, expires) VALUES (
 );
 
 
+CREATE TABLE sessions (
+    token CHAR(43) PRIMARY KEY,
+    data BLOB NOT NULL,
+    expiry TIMESTAMP(6) NOT NULL
+);
