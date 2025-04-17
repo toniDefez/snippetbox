@@ -7,7 +7,10 @@ import (
 	"net/http"
 	"os"
 	"text/template"
+	"time"
 
+	"github.com/alexedwards/scs/mysqlstore"
+	"github.com/alexedwards/scs/v2"
 	_ "github.com/go-sql-driver/mysql"
 	"snippetbox.tonidefez.net/internal/models"
 )
@@ -16,10 +19,10 @@ import (
 // web application. For now we'll only include the structured logger, but we'll
 // add more to this as the build progresses.
 type Application struct {
-	logger *slog.Logger
-	// implemeting an interfaz we can make with differents dependencies DIP
-	snippets      models.SnippetModeler
-	templateCache map[string]*template.Template
+	logger         *slog.Logger
+	snippets       models.SnippetModeler
+	templateCache  map[string]*template.Template
+	sessionManager *scs.SessionManager
 }
 
 func main() {
@@ -43,6 +46,14 @@ func main() {
 	// before the main() function exits.
 	defer db.Close()
 
+	// Use the scs.New() function to initialize a new session manager. Then we
+	// configure it to use our MySQL database as the session store, and set a
+	// lifetime of 12 hours (so that sessions automatically expire 12 hours
+	// after first being created).
+	sessionManager := scs.New()
+	sessionManager.Store = mysqlstore.New(db)
+	sessionManager.Lifetime = 12 * time.Hour
+
 	// Initialize a new template cache...
 	templateCache, err := newTemplateCache()
 	if err != nil {
@@ -51,9 +62,10 @@ func main() {
 	}
 
 	app := &Application{
-		logger:        logger,
-		snippets:      &models.SnippetModel{DB: db},
-		templateCache: templateCache,
+		logger:         logger,
+		snippets:       &models.SnippetModel{DB: db},
+		templateCache:  templateCache,
+		sessionManager: sessionManager,
 	}
 
 	logger.Info("starting server", "addr", *addr)
@@ -61,7 +73,7 @@ func main() {
 	// Because the err variable is now already declared in the code above, we need
 	// to use the assignment operator = here, instead of the := 'declare and assign'
 	// operator.
-	err = http.ListenAndServe(*addr, app.routes())
+	err = http.ListenAndServe(*addr, app.sessionManager.LoadAndSave(app.routes()))
 	logger.Error(err.Error())
 	os.Exit(1)
 }

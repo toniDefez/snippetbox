@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"runtime/debug"
+	"time"
 
 	"snippetbox.tonidefez.net/internal/models"
 )
@@ -54,7 +55,14 @@ func (app *Application) render(w http.ResponseWriter, r *http.Request, status in
 
 func (app *Application) NewTemplateData(r *http.Request) *templateData {
 	return &templateData{
-		Snippet:  models.Snippet{},
-		Snippets: []models.Snippet{},
+		Snippet:     models.Snippet{},
+		Snippets:    []models.Snippet{},
+		CurrentYear: time.Now().Year(),
+		// Use the PopString() method to retrieve the value for the "flash" key.
+		// PopString() also deletes the key and value from the session data, so it
+		// acts like a one-time fetch. If there is no matching key in the session
+		// data this will return the empty string.
+
+		Flash: app.sessionManager.PopString(r.Context(), "flash"),
 	}
 }

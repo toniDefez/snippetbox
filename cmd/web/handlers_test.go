@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/alexedwards/scs/v2"
+	"github.com/alexedwards/scs/v2/memstore"
 	"snippetbox.tonidefez.net/internal/models"
 )
 
@@ -85,13 +87,19 @@ func TestSnippetView(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Create fake session manager
+	sessionManager := scs.New()
+	sessionManager.Store = memstore.New()
+
 	app := &Application{
-		logger:        dummyLogger,
-		snippets:      &models.MockSnippetModel{},
-		templateCache: templateCache,
+		logger:         dummyLogger,
+		snippets:       &models.MockSnippetModel{},
+		templateCache:  templateCache,
+		sessionManager: sessionManager,
 	}
 
-	router := app.routes()
+	//Be sure to manage session for each route
+	router := app.sessionManager.LoadAndSave(app.routes())
 	router.ServeHTTP(rr, req)
 
 	// verify status
@@ -115,18 +123,22 @@ func TestSnippetCreateGet(t *testing.T) {
 	dummyLogger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	dummyDB := &models.SnippetModel{DB: nil}
 	templateCache, err := newTemplateCache()
+	// Create fake session manager
+	sessionManager := scs.New()
+	sessionManager.Store = memstore.New()
 
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	app := &Application{
-		logger:        dummyLogger,
-		snippets:      dummyDB,
-		templateCache: templateCache,
+		logger:         dummyLogger,
+		snippets:       dummyDB,
+		templateCache:  templateCache,
+		sessionManager: sessionManager,
 	}
 
-	router := app.routes()
+	router := app.sessionManager.LoadAndSave(app.routes())
 	router.ServeHTTP(rr, req)
 
 	// verify status
@@ -144,13 +156,18 @@ func TestSnippetCreatePost(t *testing.T) {
 
 	dummyLogger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
+	// Create fake session manager
+	sessionManager := scs.New()
+	sessionManager.Store = memstore.New()
+
 	// simulate dependencies
 	app := &Application{
-		logger:   dummyLogger,
-		snippets: &models.MockSnippetModel{},
+		logger:         dummyLogger,
+		snippets:       &models.MockSnippetModel{},
+		sessionManager: sessionManager,
 	}
 
-	router := app.routes()
+	router := app.sessionManager.LoadAndSave(app.routes())
 	router.ServeHTTP(rr, req)
 
 	// Verificar redirección
@@ -172,8 +189,14 @@ func TestSnippetCreatePost_InvalidData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	// Create fake session manager
+	sessionManager := scs.New()
+	sessionManager.Store = memstore.New()
+
 	app := &Application{
-		templateCache: templateCache,
+		templateCache:  templateCache,
+		sessionManager: sessionManager,
 	}
 
 	form := url.Values{}
@@ -186,7 +209,7 @@ func TestSnippetCreatePost_InvalidData(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 
-	app.SnippetCreatePost(rr, req)
+	app.sessionManager.LoadAndSave(http.HandlerFunc(app.SnippetCreatePost)).ServeHTTP(rr, req)
 
 	res := rr.Result()
 	defer res.Body.Close()
